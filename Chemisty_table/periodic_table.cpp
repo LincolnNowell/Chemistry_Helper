@@ -6,8 +6,7 @@ Periodic_Table::Periodic_Table()
 
 }
 
-
-void Periodic_Table::Initialize_Table(QToolButton* table[][18])
+void Periodic_Table::Initialize_Table(Interactive_Table* table[][18])
 {
     int row = 0;
     int col = 0;
@@ -31,8 +30,8 @@ void Periodic_Table::Initialize_Table(QToolButton* table[][18])
                 continue;
             }
 
-            //set pushbutton text to element name
             table[row][col]->setText(element);
+            table[row][col]->get_text(element);
             table[row][col]->setFixedSize(75,75);
 
             col++;

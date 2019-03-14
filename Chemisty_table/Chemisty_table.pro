@@ -27,11 +27,13 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
     periodic_table.cpp \
-    element.cpp
+    interactive_table.cpp \
+    user_input_area.cpp
 
 HEADERS += \
     periodic_table.h \
-    element.h
+    interactive_table.h \
+    user_input_area.h
 
 FORMS +=
 

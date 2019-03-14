@@ -1,9 +1,11 @@
-#include <vector>
+#include <iostream>
 #include <QGridLayout>
 #include <QApplication>
+#include <periodic_table.h>
 #include <QToolButton>
-#include "element.h"
 #include "periodic_table.h"
+#include "user_input_area.h"
+#include "interactive_table.h"
 
 QGridLayout *Display_Table(QWidget *);
 
@@ -24,17 +26,23 @@ QGridLayout *Display_Table(QWidget *centralWidget){
 
     Periodic_Table obj;
 
-    QToolButton *periodic[9][18];
+    User_Input_Area *text_area = new User_Input_Area(centralWidget);
+
+    Interactive_Table *periodic[9][18];
+    //QToolButton *buttons[9][18];
 
     for (int button = 0; button < 9; button++) {
         for (int col = 0; col < 18; col++) {
-            QToolButton *pushbutton = new QToolButton(centralWidget);
+            Interactive_Table *pushbutton = new Interactive_Table(text_area);
             periodic[button][col] = pushbutton;
         }
     }
 
 
     obj.Initialize_Table(periodic);
+
+
+    //obj.Set_Signals(electron_configuration, periodic);
 
     QGridLayout *periodic_table = new QGridLayout(centralWidget);
     for(int row = 0; row < 9; row++){
@@ -52,5 +60,8 @@ QGridLayout *Display_Table(QWidget *centralWidget){
         }
     }
 
+    periodic_table->addWidget(text_area, 10, 2);
+
     return periodic_table;
 }
+
