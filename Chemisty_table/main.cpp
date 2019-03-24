@@ -29,11 +29,13 @@ QGridLayout *Display_Table(QWidget *centralWidget){
     User_Input_Area *text_area = new User_Input_Area(centralWidget);
 
     Interactive_Table *periodic[9][18];
-    //QToolButton *buttons[9][18];
 
+
+    //create a grid of pushbuttons that resemble the periodic table
     for (int button = 0; button < 9; button++) {
         for (int col = 0; col < 18; col++) {
-            Interactive_Table *pushbutton = new Interactive_Table(text_area);
+            Interactive_Table *pushbutton = new Interactive_Table(centralWidget);
+            pushbutton->get_Input_area(text_area); //store the address to text area so it can modify it
             periodic[button][col] = pushbutton;
         }
     }
@@ -42,9 +44,9 @@ QGridLayout *Display_Table(QWidget *centralWidget){
     obj.Initialize_Table(periodic);
 
 
-    //obj.Set_Signals(electron_configuration, periodic);
-
     QGridLayout *periodic_table = new QGridLayout(centralWidget);
+
+    // delete all pushbuttons that have no text so they don't appear
     for(int row = 0; row < 9; row++){
         for(int col = 0; col < 18; col++){
 
@@ -60,7 +62,7 @@ QGridLayout *Display_Table(QWidget *centralWidget){
         }
     }
 
-    periodic_table->addWidget(text_area, 10, 2);
+    periodic_table->addWidget(text_area, 10, 2, 1, 10);
 
     return periodic_table;
 }

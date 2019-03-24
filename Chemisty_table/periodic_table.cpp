@@ -1,4 +1,4 @@
-#include "Periodic_Table.h"
+#include "periodic_table.h"
 
 
 Periodic_Table::Periodic_Table()
@@ -16,13 +16,13 @@ void Periodic_Table::Initialize_Table(Interactive_Table* table[][18])
     if (elements.open(QIODevice::ReadOnly))
     {
         //store the contents of the file in a QString object
-        QTextStream in(&elements);
+        QTextStream line(&elements);
 
 
-        while (!in.atEnd())
+        while (!line.atEnd())
         {
 
-            QString element = in.readLine();
+            QString element = line.readLine();
 
             if(element == table_space)
             {

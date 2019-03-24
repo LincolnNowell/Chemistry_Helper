@@ -1,8 +1,6 @@
 #ifndef PERIODIC_TABLE_H
 #define PERIODIC_TABLE_H
-#include <QToolButton>
 #include <QString>
-#include <QLineEdit>
 #include <QMessageBox>
 #include <QFile>
 #include <QTextStream>
