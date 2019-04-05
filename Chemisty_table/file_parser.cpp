@@ -40,7 +40,7 @@ public:
 
 int main()
 {
-	std::string line = " H5O + N4H + Ar = He7 + Ne + CO2 ";
+	std::string line = " H5O + N4H + Ar = Zn3 + Xe2 + ArBa ";
 
 	std::vector<compound> LeftHandSide;
 	std::vector<compound> RightHandSide;
@@ -86,7 +86,7 @@ int main()
 			name = line.at(character);
 
 			//check to see if to see if character next to it is a lowercase
-			if (line.at(character + 1) > 97 and line.at(character + 1) < 123) {
+			if (line.at(character + 1) > 96 and line.at(character + 1) < 123) {
 				name += line.at(character + 1);
 				has_lower_case = true;
 			}
@@ -113,12 +113,14 @@ int main()
 			}
 		}
 
-		//if there is now subscript after lowercase
-		else if (line.at(character) > 97 and line.at(character) < 123 and has_lower_case == true) {
+		//if there is no subscript after lowercase
+		else if (line.at(character) > 96 and line.at(character) < 123 and has_lower_case == true) {
 			if (line.at(character + 1) == ' ') {
 				create_element = true;
 			}
-
+			else if (line.at(character + 1) > 64 and line.at(character + 1) < 91) {
+				create_element = true;
+			}
 		}
 
 
@@ -126,30 +128,10 @@ int main()
 			std::cout << subscript << " " << name << "\n";
 			compound_to_be_stored.push_back(element(name, subscript));
 			create_element = false;
+			has_lower_case = false;
 			subscript = 1;
 		}
 	}
 
 
 }
-
-/*
-		// check if the character behind it is a exponent symbol
-		if (character > 0 and line.at(character - 1) == exponent_symbol) {
-			if (line.at(character) > 47 and line.at(character) < 58) {
-				store = line.at(character);
-				exponent = std::stoi(store);
-				create_element = true;
-			}
-		}
-
-
-		// check if the character behind it is a exponent symbol
-		if (character > 0 and line.at(character - 1) == exponent_symbol) {
-			if (line.at(character) > 47 and line.at(character) < 58) {
-				store = line.at(character);
-				exponent = std::stoi(store);
-				create_element = true;
-			}
-		}
-*/
