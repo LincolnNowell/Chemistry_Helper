@@ -3,16 +3,6 @@
 #include <algorithm>
 #include <cmath>
 
-std::vector<std::string> give_variable(int index){
-
-    std::vector<std::string> vars;
-    for(size_t i = 65; i < (65 + index); i++)
-    {
-        vars.push_back(std::to_string(i));
-    }
-
-    return vars;  
-}
 int GCD(std::vector<double> equation){
 
     //sort vector before checking for gcd
@@ -38,10 +28,4 @@ int GCD(std::vector<double> equation){
     }
     
     return gcd;
-}
-
-int main()
-{
-    std::vector<double> set = {1,.50,.25};
-    std::cout << GCD(set);
 }
