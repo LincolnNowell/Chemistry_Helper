@@ -6,6 +6,7 @@
 #include "periodic_table.h"
 #include "user_input_area.h"
 #include "interactive_table.h"
+#include "submit_button.h"
 
 QGridLayout *Display_Table(QWidget *);
 
@@ -62,7 +63,12 @@ QGridLayout *Display_Table(QWidget *centralWidget){
         }
     }
 
+    Submit_Button *Submit = new Submit_Button(text_area);
+    Submit->setText("Submit");
+    Submit->setFixedSize(70,70);
+
     periodic_table->addWidget(text_area, 10, 2, 1, 10);
+    periodic_table->addWidget(Submit, 10, 13, 13, 14);
 
     return periodic_table;
 }

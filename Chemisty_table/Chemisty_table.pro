@@ -25,13 +25,17 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
+    gcd.cpp \
+    input_parser.cpp \
         main.cpp \
     periodic_table.cpp \
     interactive_table.cpp
 
 HEADERS += \
+    input_parser.h \
     periodic_table.h \
     interactive_table.h \
+    submit_button.h \
     user_input_area.h
 
 FORMS +=

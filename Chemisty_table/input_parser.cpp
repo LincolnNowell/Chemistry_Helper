@@ -1,9 +1,4 @@
-#include <algorithm>
-#include <cmath>
-#include <iostream>
-#include <map>
-#include <string>
-#include <vector>
+#include "input_parser.h"
 
 
 void parse(std::string line);
@@ -44,15 +39,19 @@ public:
 
 };
 
-struct equation
+class equation
 {
+public:
+
     //stores both the left and right sides of the equation
     equation(const std::vector<compound>& Left, const std::vector<compound>& Right) : left(Left), right(Right){}
 
     std::vector<compound> left, right;
 };
 
-struct Variable {
+class Variable {
+
+public:
 
     Variable(char Var = ' ', int Num = 0) : var(Var), constant(Num) {}
 
@@ -62,14 +61,6 @@ struct Variable {
 
 void Turn_into_Algebra_Equation(const equation&);
 Variable Solve_for_Variable(std::string, char,std::vector<Variable>);
-
-int main() {
-
-    std::string user_input;
-    std::cout << "Enter a Chemical Equation.\n";
-    std::getline(std::cin, user_input);
-    parse(user_input);
-}
 
 
 void parse(std::string line)
@@ -177,6 +168,8 @@ void parse(std::string line)
     equation chemical_equation(LeftHandSide, RightHandSide);
     Turn_into_Algebra_Equation(chemical_equation);
 }
+
+
 
 void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
 

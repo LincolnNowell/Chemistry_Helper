@@ -12,9 +12,9 @@ int GCD(std::vector<double> equation){
 
     for(size_t num = 0; num < equation.size(); ++num)
     {
-        
+
         double result = equation[num] * gcd;
-        
+
         // check if number result is a whole number
         if(std::floor(result) == result){
         }
@@ -26,6 +26,6 @@ int GCD(std::vector<double> equation){
             num = -1;
         }
     }
-    
+
     return gcd;
 }
