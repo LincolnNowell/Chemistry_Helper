@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/MyFile">
+        <file>Periodic table elements.txt</file>
+    </qresource>
+</RCC>
