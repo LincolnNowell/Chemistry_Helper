@@ -34,10 +34,10 @@ void Periodic_Table::Initialize_Table(Interactive_Table* table[][18])
             table[row][col]->get_text(element);
             table[row][col]->setFixedSize(75,75);
 
-            col++;
+            ++col;
             if (col == 18)
             {
-                row++;
+                ++row;
                 col = 0;
             }
         }

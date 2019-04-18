@@ -22,21 +22,22 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-CONFIG += c++11
+CONFIG += c++17
 
 SOURCES += \
-    gcd.cpp \
     input_parser.cpp \
         main.cpp \
     periodic_table.cpp \
-    interactive_table.cpp
+    interactive_table.cpp \
+    util.cpp
 
 HEADERS += \
     input_parser.h \
     periodic_table.h \
     interactive_table.h \
     submit_button.h \
-    user_input_area.h
+    user_input_area.h \
+    util.h
 
 FORMS +=
 
