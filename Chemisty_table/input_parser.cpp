@@ -136,6 +136,7 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
     coeffiecents.insert(std::pair<char,double>('A', 1));// Let A = 1 used to solve for first coeffiecent
 
 
+    int num_element = 1;
     //Find the compounds that have the the element and concat to string
     for (size_t compound = 0; compound < equation_to_balance.left.size(); ++compound)
     {
@@ -153,6 +154,7 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
                     if (equation_to_balance.left[compound].compound_elements[element].name ==
                         total[inner_compound].compound_elements[inner_element].name)
                     {
+                        ++num_element;
                         //equation += equation_to_balance.left[compound].compound_elements[element].name;
 
 
@@ -167,6 +169,7 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
                 }
             }
 
+            std::cout << equation << "\n";
             Solve_for_Variable(equation,coeffiecents);
             equation = "";
         }
@@ -248,6 +251,8 @@ std::vector<double> Check_For_Fractions(std::map<char,double>& coeffiecents){
             to_be_sorted.push_back(value);
         }
 
+        for(const auto& obj : to_be_sorted){ std::cout << obj << " ";}
+
         int gcd = GCD(to_be_sorted);
 
         for(auto& [key,value] : coeffiecents){
@@ -300,36 +305,59 @@ Variable Find_Variable(std::vector<Variable>& LeftHandSide,std::vector<Variable>
             var = obj.var;
         }
     }
+    std::cout << "Checking objects Right \n";
+    for (const auto& obj : RightHandSide) {
+        std::cout << obj.var << " " << obj.constant << "\n";
+    }
+    std::cout << "Checking objects Left \n";
+    for (const auto& obj : LeftHandSide) {
+        std::cout << obj.var << " " << obj.constant << "\n";
+    }
+    std::cout << "\n";
 
     if(Var_On_Left){
         for (size_t element = 0; element < RightHandSide.size(); ++element) {
             for (size_t left = 0; left < LeftHandSide.size(); ++left) {
                 if(LeftHandSide[element].var == ' '){
+                    std::cout << RightHandSide[left].constant << " " << LeftHandSide[element].constant << "\n";
                     RightHandSide[left].constant -= LeftHandSide[element].constant;
+                    std::cout << "Right hand side " << "\n";
+                    std::cout << RightHandSide[left].constant << " " << LeftHandSide[element].constant << "\n";
                 }
                 else{
+                    std::cout << RightHandSide[left].constant << " " << LeftHandSide[element].constant << "\n";
                     RightHandSide[left].constant /= LeftHandSide[element].constant;
+                    std::cout << "Right hand side " << "\n";
+                    std::cout << RightHandSide[left].constant << " " << LeftHandSide[element].constant << "\n";
                 }
             }
         }
 
         for(const auto& obj : RightHandSide){
             sum += obj.constant;
+            std::cout << "Right hand side " << sum << "\n";
         }
     }
     else if(Var_On_Right){
         for (size_t element = 0; element < LeftHandSide.size(); ++element) {
             for (size_t right = 0; right < RightHandSide.size(); ++right) {
                 if(RightHandSide[element].var == ' '){
+                    std::cout << LeftHandSide[right].constant << " " << RightHandSide[element].constant << "\n";
                     LeftHandSide[right].constant -= RightHandSide[element].constant;
+                    std::cout << "Left hand side " << "\n";
+                    std::cout << LeftHandSide[right].constant << " " << RightHandSide[element].constant << "\n";
                 }
                 else{
+                    std::cout << LeftHandSide[right].constant << " " << RightHandSide[element].constant << "\n";
                     LeftHandSide[right].constant /= RightHandSide[element].constant;
+                    std::cout << "Left hand side " << "\n";
+                    std::cout << LeftHandSide[right].constant << " " << RightHandSide[element].constant << "\n";
                 }
             }
         }
         for(const auto& obj : LeftHandSide){
             sum += obj.constant;
+            std::cout << "Left hand side " << sum << "\n";
         }
     }
 
@@ -340,7 +368,9 @@ Variable Find_Variable(std::vector<Variable>& LeftHandSide,std::vector<Variable>
 
 void Solve_for_Variable(std::string Algebra_Equation, std::map<char,double>& known_constansts) {
 
+    std::cout << Algebra_Equation << "\n";
     Insert_Variables(Algebra_Equation, known_constansts);
+    std::cout << Algebra_Equation << "\n";
 
     double num = 0;
     char var = ' ';
@@ -368,7 +398,9 @@ void Solve_for_Variable(std::string Algebra_Equation, std::map<char,double>& kno
         }
         else if(Algebra_Equation.at(character) == ')'){
             var_has_value = false;
+            std::cout << hold_coefficent << " " << hold_char << "\n";
             num = std::stod(hold_coefficent) * std::stod(hold_char);
+            hold_char = ' ';
             var = ' ';
             create_element = true;
         }
@@ -378,6 +410,7 @@ void Solve_for_Variable(std::string Algebra_Equation, std::map<char,double>& kno
             if (Algebra_Equation.at(character) > 47 and Algebra_Equation.at(character) < 58)
             {
                 hold_coefficent = Algebra_Equation.at(character);
+                std::cout << hold_coefficent << "\n";
             }
             else if (Algebra_Equation.at(character) > 63 and Algebra_Equation.at(character) < 91){
                 var = Algebra_Equation.at(character);
@@ -397,6 +430,11 @@ void Solve_for_Variable(std::string Algebra_Equation, std::map<char,double>& kno
              }
          }
     }
+
+    std::cout << " " << "\n";
+    for(const auto& obj : RightHandSide){std::cout << obj.var << " " << obj.constant << "\n";}
+    for(const auto& obj : LeftHandSide){std::cout << obj.var << " " << obj.constant << "\n";}
+    std::cout << " " << "\n";
 
     Variable obj(Find_Variable(LeftHandSide, RightHandSide));
     //std::cout << obj.var << " " << obj.constant << "\n";
