@@ -68,7 +68,7 @@ public:
     Variable(char Var = ' ', double Num = 0) : var(Var), constant(Num) {}
 
     char var = ' ';
-    double constant = 0;
+    double constant = 0.0;
     bool solved_for;
 };
 
@@ -76,7 +76,7 @@ void parse(std::string line);
 void Turn_into_Algebra_Equation(const equation&);
 void Insert_Variables(std::string&,const std::map<char,double>&);
 void Solve_for_Variable(std::string,std::map<char,double>&);
-Variable Find_Variable(std::vector<Variable>&, std::vector<Variable>&);
+Variable Find_Variable(std::vector<Variable>, std::vector<Variable>);
 std::vector<double> Check_For_Fractions(std::map<char,double>&);
 
 #endif // INPUT_PARSER_H
