@@ -14,7 +14,7 @@ void parse(std::string line)
     std::vector<compound> LeftHandSide;
     std::vector<compound> RightHandSide;
 
-    std::vector<element> compound_to_be_stored;
+    std::vector<element> compound_to_be_stored; //hold elements to be stored in a compound object
 
     int subscript = 1;
 
@@ -24,10 +24,12 @@ void parse(std::string line)
     bool left_side = true;
     bool has_lower_case = false;
 
+    //Loop through each letter of the user input to parse for elements
     for (size_t character = 0; character < line.size(); ++character) {
 
         if (line.at(character) == ' ') { continue; }
 
+        // > is appended to so the program doesn't miss the last compound
         if (line.at(character) == '>') {
             RightHandSide.push_back(compound(compound_to_be_stored));
         }
@@ -42,7 +44,7 @@ void parse(std::string line)
 
         // + signals the compound has ended
         if (line.at(character) == '+') {
-            if (left_side == true) {
+            if (left_side) {
                 LeftHandSide.push_back(compound(compound_to_be_stored));
             }
             else {
@@ -96,7 +98,7 @@ void parse(std::string line)
         }
 
 
-        if (create_element == true) {
+        if (create_element) {
             compound_to_be_stored.push_back(element(name, subscript));
             create_element = false;
             has_lower_case = false;
@@ -105,10 +107,9 @@ void parse(std::string line)
         }
     }
 
-    equation chemical_equation(LeftHandSide, RightHandSide);
+    equation chemical_equation(LeftHandSide, RightHandSide); // stored in equation class so to lessen amount of args passed to function
     Turn_into_Algebra_Equation(chemical_equation);
 }
-
 
 
 void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
@@ -127,16 +128,17 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
 
     for (auto& Cmpd : equation_to_balance.right) {total.push_back(Cmpd);}
 
+    //give each compound a variable
     char var = 'A';
     for (auto& Cmpd : total) { if (Cmpd.compound_elements[0].name == " ") {} else { Cmpd.mVariable = var++; } }
 
     std::string equation = "";
 
+    // map holds the coefficecents that have been solved for
     std::map<char,double> coeffiecents;
     coeffiecents.insert(std::pair<char,double>('A', 1));// Let A = 1 used to solve for first coeffiecent
 
 
-    int num_element = 1;
     //Find the compounds that have the the element and concat to string
     for (size_t compound = 0; compound < equation_to_balance.left.size(); ++compound)
     {
@@ -154,10 +156,9 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
                     if (equation_to_balance.left[compound].compound_elements[element].name ==
                         total[inner_compound].compound_elements[inner_element].name)
                     {
-                        ++num_element;
-                        //equation += equation_to_balance.left[compound].compound_elements[element].name;
 
 
+                        //replace variable with its value
                         if (total[inner_compound].Constant != 0) {
                             equation += std::to_string(total[inner_compound].compound_elements[inner_element].numb_of_elements) +
                                 "(" + std::to_string(total[inner_compound].Constant) + ")";
@@ -169,81 +170,37 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
                 }
             }
 
-            std::cout << equation << "\n";
             Solve_for_Variable(equation,coeffiecents);
             equation = "";
         }
     }
 
 
-   std::vector<double>coeffiecents_to_add = Check_For_Fractions(coeffiecents);
+   Add_Coeffiecents_To_Compound(total,coeffiecents);
 
-   for(const auto& obj : coeffiecents_to_add){std::cout << obj << "\n";}
+   std::string hold = Create_Output(total);
 
-   if(coeffiecents_to_add[0] <= 0){coeffiecents_to_add.erase(coeffiecents_to_add.begin());}
-   size_t gap_for_equals_sign = 0;
+   Format_Output(hold);
 
-   for (size_t start = 0; start < total.size(); ++start) {
-       if(total[start].mVariable == ' '){
-           gap_for_equals_sign = 1;
-           continue;
-       }
-
-       total[start].Constant = static_cast<int>(coeffiecents_to_add[start - gap_for_equals_sign]);
-   }
-
-   std::string hold = "";
-
-   for(const auto& Compound : total){
-       if(Compound.mVariable == ' '){
-           hold += "= ";
-       }
-       else if(Compound.Constant < 2){
-           for(const auto& elements : Compound.compound_elements){
-               hold += elements.name;
-               if(elements.numb_of_elements > 1){hold += std::to_string(elements.numb_of_elements);}
-           }
-           hold += " + ";
-       }
-       else{
-           hold+= std::to_string(Compound.Constant);
-           for(const auto& elements : Compound.compound_elements){
-               hold += elements.name;
-               if(elements.numb_of_elements > 1){hold += std::to_string(elements.numb_of_elements);}
-           }
-           hold += " + ";
-       }
-   }
-
-
-    size_t store = 0;
-    bool ready = false;
-
-   for (size_t line = 0; line < hold.size(); ++line) {
-       if(hold.at(line) == '+'){
-           store = line;
-           ready = true;
-       }
-
-       if(ready and (hold.at(line) == '=' or line == hold.size() - 1)){
-           hold.erase(hold.begin() + store);
-           ready = false;
-       }
-   }
-
+   //Display output
    QPointer<QMessageBox> output = new QMessageBox();
    output->setText(QString::fromStdString(hold));
    output->show();
-
 
 }
 
 std::vector<double> Check_For_Fractions(std::map<char,double>& coeffiecents){
 
+    /*
+     * If the any of the coeffiecents are decimals find the comman multiple and multiply each number by it
+        eliminating the fractions
+    */
+
     bool has_fraction = false;
     std::vector<double> to_be_sorted;
     std::vector<double> numbers;
 
+    // floor the value and compare it to original to see if it is a decimal
     for(const auto& [key,value] : coeffiecents){
         if(std::floor(value) != value){
             has_fraction = true;
@@ -278,14 +235,19 @@ void Insert_Variables(std::string& Algebra_Equation, const std::map<char,double>
             if(key == Algebra_Equation.at(line)){
                 std::string hold = "(" + std::to_string(value) + ")"; // put parenthesis around the known value
                 int location = static_cast<int>(line) + 1;
-                Algebra_Equation.replace(Algebra_Equation.begin() + static_cast<int>(line),Algebra_Equation.begin() + location, hold);
                 //replace known values in the string
+                Algebra_Equation.replace(Algebra_Equation.begin() + static_cast<int>(line),Algebra_Equation.begin() + location, hold);
             }
         }
     }
 }
 
 Variable Find_Variable(std::vector<Variable> Left,std::vector<Variable> Right){
+
+    /*
+        Variable is solved for like in an algebraic equation
+    */
+
     bool Var_On_Left = false;
     bool Var_On_Right = false;
     char var = ' ';
@@ -294,6 +256,7 @@ Variable Find_Variable(std::vector<Variable> Left,std::vector<Variable> Right){
     std::vector<Variable>LeftHandSide(Left), RightHandSide(Right);
 
 
+    //finds location of unsolved variable
     for(const auto& obj : LeftHandSide){
         if(obj.var != ' '){
             Var_On_Left = true;
@@ -308,67 +271,44 @@ Variable Find_Variable(std::vector<Variable> Left,std::vector<Variable> Right){
             var = obj.var;
         }
     }
-    std::cout << "Checking objects Right \n";
-    for (const auto& obj : RightHandSide) {
-        std::cout << obj.var << " " << obj.constant << "\n";
-    }
-    std::cout << "Checking objects Left \n";
-    for (const auto& obj : LeftHandSide) {
-        std::cout << obj.var << " " << obj.constant << "\n";
-    }
-    std::cout << " Right hand size = " << RightHandSide.size() << " Left Hand size = " << LeftHandSide.size() << "\n";
 
+
+
+
+    /*
+        loop through the variables on the side of the unknown variable.
+        if it is a variable divide all the numbers on the other side by that number,
+        else if subtract. Then Sum all the number on the side without the variable to get it's value
+    */
 
     if(Var_On_Left){
         for (size_t element = 0; element < LeftHandSide.size(); ++element) {
             for (size_t right = 0;  right < RightHandSide.size(); ++right) {
                 if(LeftHandSide[element].var == ' '){
-                    std::cout << "element " << element << " right " << right << "\n";
-                    std::cout << RightHandSide[right].constant << " " << LeftHandSide[element].constant << "\n";
                     RightHandSide[right].constant -= LeftHandSide[element].constant;
-                    std::cout << "Right hand side " << "\n";
-                    std::cout << RightHandSide[right].constant << " " << LeftHandSide[element].constant << "\n";
                 }
                 else{
-                    std::cout << "element " << element << " right " << right << "\n";
-                    std::cout << RightHandSide[right].constant << " " << LeftHandSide[element].constant << "\n";
                     RightHandSide[right].constant /= LeftHandSide[element].constant;
-                    std::cout << "Right hand side " << "\n";
-                    std::cout << RightHandSide[right].constant << " " << LeftHandSide[element].constant << "\n";
                 }
             }
         }
 
-        for(const auto& obj : RightHandSide){
-            sum += obj.constant;
-            std::cout << "Right hand side " << sum << "\n";
-        }
+        for(const auto& obj : RightHandSide){sum += obj.constant;}
+
     }
     else if(Var_On_Right){
         for (size_t element = 0; element < RightHandSide.size(); ++element) {
             for (size_t left = 0; left < LeftHandSide.size(); ++left) {
                 if(RightHandSide[element].var == ' '){
-                    std::cout << RightHandSide[element].var << "\n";
-                    std::cout << "element " << element << " left " << left << "\n";
-                    std::cout << LeftHandSide[left].constant << " " << RightHandSide[element].constant << "\n";
                     LeftHandSide[left].constant -= RightHandSide[element].constant;
-                    std::cout << "Left hand side " << "\n";
-                    std::cout << LeftHandSide[left].constant << " " << RightHandSide[element].constant << "\n";
                 }
                 else{
-                    std::cout << RightHandSide[element].var << "\n";
-                    std::cout << "element " << element << " left " << left << "\n";
-                    std::cout << LeftHandSide[left].constant << " " << RightHandSide[element].constant << "\n";
                     LeftHandSide[left].constant /= RightHandSide[element].constant;
-                    std::cout << "Left hand side " << "\n";
-                    std::cout << LeftHandSide[left].constant << " " << RightHandSide[element].constant << "\n";
                 }
             }
         }
-        for(const auto& obj : LeftHandSide){
-            sum += obj.constant;
-            std::cout << "Left hand side " << sum << "\n";
-        }
+
+        for(const auto& obj : LeftHandSide){sum += obj.constant;}
     }
 
 
@@ -378,15 +318,13 @@ Variable Find_Variable(std::vector<Variable> Left,std::vector<Variable> Right){
 
 void Solve_for_Variable(std::string Algebra_Equation, std::map<char,double>& known_constansts) {
 
-    std::cout << Algebra_Equation << "\n";
     Insert_Variables(Algebra_Equation, known_constansts);
-    std::cout << Algebra_Equation << "\n";
 
     double num = 0;
     char var = ' ';
     bool change_sides = false;
     std::string hold_coefficent = "";
-    std::string hold_char = "";
+    std::string hold_known_value = "";
     bool var_has_value = false;
     bool create_element = false;
 
@@ -398,19 +336,22 @@ void Solve_for_Variable(std::string Algebra_Equation, std::map<char,double>& kno
         if (Algebra_Equation.at(character) == ' ') { continue; }
         if (Algebra_Equation.at(character) == '=') { change_sides = true; continue; }
 
+        //store the numbers inside parenthesis
         if(var_has_value and Algebra_Equation.at(character) != ')'){
-            hold_char += Algebra_Equation.at(character);
+            hold_known_value += Algebra_Equation.at(character);
             continue;
         }
 
+        //the known values are surrounded by parenthesises if a open bracket is meet a flag is set to true
         if(Algebra_Equation.at(character) == '('){
             var_has_value = true;
         }
+
+        //multipy coefficent and know value together
         else if(Algebra_Equation.at(character) == ')'){
             var_has_value = false;
-            //std::cout << hold_coefficent << " " << hold_char << "\n";
-            num = std::stod(hold_coefficent) * std::stod(hold_char);
-            hold_char = ' ';
+            num = std::stod(hold_coefficent) * std::stod(hold_known_value);
+            hold_known_value = ' ';
             var = ' ';
             create_element = true;
         }
@@ -420,8 +361,8 @@ void Solve_for_Variable(std::string Algebra_Equation, std::map<char,double>& kno
             if (Algebra_Equation.at(character) > 47 and Algebra_Equation.at(character) < 58)
             {
                 hold_coefficent = Algebra_Equation.at(character);
-                std::cout << hold_coefficent << "\n";
             }
+            //runs if variable is unsolved
             else if (Algebra_Equation.at(character) > 63 and Algebra_Equation.at(character) < 91){
                 var = Algebra_Equation.at(character);
                 num = std::stod(hold_coefficent);
@@ -441,51 +382,88 @@ void Solve_for_Variable(std::string Algebra_Equation, std::map<char,double>& kno
          }
     }
 
-    std::cout << " " << "\n";
-    for(const auto& obj : RightHandSide){std::cout << obj.var << " " << obj.constant << "\n";}
-    for(const auto& obj : LeftHandSide){std::cout << obj.var << " " << obj.constant << "\n";}
-    std::cout << " " << "\n";
+
 
     Variable obj(Find_Variable(LeftHandSide, RightHandSide));
-    std::cout << obj.var << " " << obj.constant << "\n";
     known_constansts.insert(std::pair(obj.var,obj.constant));
 }
 
-/*
-        // check if the character behind it is a exponent symbol
-        if (character > 0 and line.at(character - 1) == exponent_symbol) {
-            if (line.at(character) > 47 and line.at(character) < 58) {
-                store = line.at(character);
-                exponent = std::stoi(store);
-                create_element = true;
-            }
+void Add_Coeffiecents_To_Compound(std::vector<compound>& total, std::map<char,double>&coeffiecents){
+
+    /*Add Coeffiecents to corresponding compound*/
+
+    std::vector<double>coeffiecents_to_add = Check_For_Fractions(coeffiecents);
+
+
+    if(coeffiecents_to_add[0] <= 0){coeffiecents_to_add.erase(coeffiecents_to_add.begin());}
+
+    size_t gap_for_equals_sign = 0; // skip the compound that represents the equals sign
+
+    for (size_t start = 0; start < total.size(); ++start) {
+        if(total[start].mVariable == ' '){
+            gap_for_equals_sign = 1;
+            continue;
         }
-        // check if the character behind it is a exponent symbol
-        if (character > 0 and line.at(character - 1) == exponent_symbol) {
-            if (line.at(character) > 47 and line.at(character) < 58) {
-                store = line.at(character);
-                exponent = std::stoi(store);
-                create_element = true;
-            }
+
+        total[start].Constant = static_cast<int>(coeffiecents_to_add[start - gap_for_equals_sign]);
+    }
+}
+
+std::string Create_Output(const std::vector<compound>& total){
+
+    /*
+        concat the compound info onto hold string
+    */
+
+    std::string hold = "";
+
+    for(const auto& Compound : total){
+        //check for equals sign
+        if(Compound.mVariable == ' '){
+            hold += "= ";
         }
 
+        // if the coefficent is less than 2, just add the name and subscript
+        else if(Compound.Constant < 2){
+            for(const auto& elements : Compound.compound_elements){
+                hold += elements.name;
+                if(elements.numb_of_elements > 1){hold += std::to_string(elements.numb_of_elements);}
+            }
+            hold += " + ";
+        }
 
-            if (Algebra_Equation.at(character) == '(') {
+        else{
+            hold+= std::to_string(Compound.Constant);
+            for(const auto& elements : Compound.compound_elements){
+                hold += elements.name;
+                if(elements.numb_of_elements > 1){hold += std::to_string(elements.numb_of_elements);}
+            }
+            hold += " + ";
+        }
+    }
 
-            }
-            else {
-                //store variable and the number of elements
-                var = Algebra_Equation.at(character + 1);
-                num = std::stod(hold_char);
-            }
+    return hold;
+}
 
-            if (Algebra_Equation.at(character) == '>') {
-                RightHandSide.push_back(Variable(var, num));
-            }
-            if (change_sides != true) {
-                LeftHandSide.push_back(Variable(var, num));
-            }
-            else {
-                RightHandSide.push_back(Variable(var, num));
-            }
-*/
+void Format_Output(std::string& hold){
+
+    /*
+     Remove and misplaced + signs
+     */
+
+    size_t store = 0;
+    bool ready = false;
+
+   for (size_t line = 0; line < hold.size(); ++line) {
+       if(hold.at(line) == '+'){
+           store = line;
+           ready = true;
+       }
+
+       // remove the plus signs that gets added at the end
+       if(ready and (hold.at(line) == '=' or line == hold.size() - 1)){
+           hold.erase(hold.begin() + store);
+           ready = false;
+       }
+   }
+}

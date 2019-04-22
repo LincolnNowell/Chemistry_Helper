@@ -78,5 +78,8 @@ void Insert_Variables(std::string&,const std::map<char,double>&);
 void Solve_for_Variable(std::string,std::map<char,double>&);
 Variable Find_Variable(std::vector<Variable>, std::vector<Variable>);
 std::vector<double> Check_For_Fractions(std::map<char,double>&);
+void Add_Coeffiecents_To_Compound(std::vector<compound>& total, std::map<char,double>&coeffiecents);
+std::string Create_Output(const std::vector<compound>& total);
+void Format_Output(std::string&);
 
 #endif // INPUT_PARSER_H
