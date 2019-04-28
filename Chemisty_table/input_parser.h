@@ -73,11 +73,12 @@ public:
 };
 
 void parse(std::string line);
-void Turn_into_Algebra_Equation(const equation&);
+void Turn_into_Algebra_Equation(const equation&,bool redo = false);
 void Insert_Variables(std::string&,const std::map<char,double>&);
 void Solve_for_Variable(std::string,std::map<char,double>&);
 Variable Find_Variable(std::vector<Variable>, std::vector<Variable>);
 std::vector<double> Check_For_Fractions(std::map<char,double>&);
+bool is_balanced(std::vector<compound>& total);
 void Add_Coeffiecents_To_Compound(std::vector<compound>& total, std::map<char,double>&coeffiecents);
 std::string Create_Output(const std::vector<compound>& total);
 void Format_Output(std::string&);

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <QPointer>
 #include "input_parser.h"
 #include "util.h"
@@ -89,7 +90,7 @@ void parse(std::string line)
 
         //if there is no subscript after lowercase
         else if (line.at(character) > 96 and line.at(character) < 123 and has_lower_case == true) {
-            if (line.at(character + 1) == ' ') {
+            if (line.at(character + 1) == ' ' or line.at(character + 1) == '>') {
                 create_element = true;
             }
             else if (line.at(character + 1) > 64 and line.at(character + 1) < 91) {
@@ -105,6 +106,7 @@ void parse(std::string line)
             name = "";
             subscript = 1;
         }
+
     }
 
     equation chemical_equation(LeftHandSide, RightHandSide); // stored in equation class so to lessen amount of args passed to function
@@ -112,7 +114,9 @@ void parse(std::string line)
 }
 
 
-void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
+void Turn_into_Algebra_Equation(const equation& equation_to_balance, bool redo) {
+
+    static int tries = 0;
 
     std::vector<compound> total;
 
@@ -138,6 +142,10 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
     std::map<char,double> coeffiecents;
     coeffiecents.insert(std::pair<char,double>('A', 1));// Let A = 1 used to solve for first coeffiecent
 
+    size_t num_elements = 0;
+    bool use_substitution = false;
+
+    std::vector<std::string> equations;
 
     //Find the compounds that have the the element and concat to string
     for (size_t compound = 0; compound < equation_to_balance.left.size(); ++compound)
@@ -157,6 +165,7 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
                         total[inner_compound].compound_elements[inner_element].name)
                     {
 
+                        ++num_elements;
 
                         //replace variable with its value
                         if (total[inner_compound].Constant != 0) {
@@ -170,23 +179,59 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
                 }
             }
 
-            Solve_for_Variable(equation,coeffiecents);
+
+            if(num_elements == total.size() - 1){
+                use_substitution = true;
+            }
+
+            equations.push_back(equation);
+            num_elements = 0;
             equation = "";
+        }
+    }
+
+    if(redo){
+        struct greater_than{
+            bool operator()(const std::string& first, const std::string& second){
+                return first.size() < second.size();
+            }
+        };
+
+        greater_than ASC;
+
+        std::sort(equations.begin(),equations.end(), ASC);
+    }
+
+    if(use_substitution){
+        for(size_t index = 0;index < equations.size(); ++index){
+            Solve_for_Variable(equations[index],coeffiecents);
+        }
+    }
+    else{
+        for(size_t index = 0;index < equations.size(); ++index){
+            Solve_for_Variable(equations[index],coeffiecents);
         }
     }
 
 
    Add_Coeffiecents_To_Compound(total,coeffiecents);
 
-   std::string hold = Create_Output(total);
+   bool balanced = is_balanced(total);
 
-   Format_Output(hold);
+   if(!balanced and tries < 1){
+       ++tries;
+       Turn_into_Algebra_Equation(equation_to_balance,true);
+   }
+   else{
+       std::string hold = Create_Output(total);
 
-   //Display output
-   QPointer<QMessageBox> output = new QMessageBox();
-   output->setText(QString::fromStdString(hold));
-   output->show();
+       Format_Output(hold);
 
+       //Display output
+       QPointer<QMessageBox> output = new QMessageBox();
+       output->setText(QString::fromStdString(hold));
+       output->show();
+   }
 }
 
 std::vector<double> Check_For_Fractions(std::map<char,double>& coeffiecents){
@@ -311,7 +356,6 @@ Variable Find_Variable(std::vector<Variable> Left,std::vector<Variable> Right){
         for(const auto& obj : LeftHandSide){sum += obj.constant;}
     }
 
-
     return Variable(var, sum);
 }
 
@@ -388,6 +432,99 @@ void Solve_for_Variable(std::string Algebra_Equation, std::map<char,double>& kno
     known_constansts.insert(std::pair(obj.var,obj.constant));
 }
 
+bool is_balanced(std::vector<compound>& total){
+
+    /*
+        Check if the chemical equation is balanced
+    */
+
+    std::vector<std::string> elements = {total[0].compound_elements[0].name};
+
+    std::string stored_element = " ";
+
+    bool balanced = true;
+
+    //store all variables in a vector
+    for (size_t compound = 0; compound < total.size(); ++compound){
+
+        for (size_t element = 0; element < total[compound].compound_elements.size(); ++element) {
+
+            stored_element = total[compound].compound_elements[element].name;
+            if(stored_element == " "){continue;}
+
+            //don't store if already stored
+            if(std::find(elements.begin(),elements.end(), stored_element) != elements.end()){}
+
+            else {
+                elements.push_back(stored_element);
+            }
+       }
+    }
+
+
+    std::vector<int> lefthandside;
+    std::vector<int> righthandside;
+    bool change_sides = false;
+
+    int leftside = 0, rightside = 0;
+    int coefficent;
+
+    for(size_t i = 0; i < elements.size(); ++i){
+
+        stored_element = elements[i];
+
+        for (size_t compound = 0; compound < total.size(); ++compound){
+
+            for (size_t element = 0; element < total[compound].compound_elements.size(); ++element) {
+
+                if(total[compound].Constant == 0){
+                    coefficent = 1;
+                }
+                else{
+                    coefficent = total[compound].Constant;
+                }
+
+
+                if(total[compound].compound_elements[element].name == stored_element){
+                    if(!change_sides){leftside += total[compound].compound_elements[element].numb_of_elements * coefficent;}
+                    else{rightside += total[compound].compound_elements[element].numb_of_elements * coefficent;}
+                }
+                else if (total[compound].compound_elements[element].name == " "){
+                    change_sides = true;
+                    lefthandside.push_back(leftside);
+                    leftside = 0;
+                    rightside = 0;
+                }
+
+           }
+        }
+        righthandside.push_back(rightside);
+
+        leftside = 0;
+        rightside = 0;
+
+        change_sides = false;
+    }
+
+
+
+
+
+    //the size of each vector should be the same because they hold the amount of a certain element on each side
+    //both sides should contain the element
+    for (size_t begin = 0; begin < lefthandside.size(); ++begin) {
+        if(lefthandside[begin] != righthandside[begin]){
+            balanced = false;
+            continue;
+        }
+    }
+
+
+
+    return balanced;
+}
+
+
 void Add_Coeffiecents_To_Compound(std::vector<compound>& total, std::map<char,double>&coeffiecents){
 
     /*Add Coeffiecents to corresponding compound*/
@@ -441,6 +578,7 @@ std::string Create_Output(const std::vector<compound>& total){
             hold += " + ";
         }
     }
+
 
     return hold;
 }

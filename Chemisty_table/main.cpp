@@ -24,10 +24,10 @@ int main(int argc, char *argv[])
 }
 
 QGridLayout *Display_Table(QWidget *centralWidget){
-
     Periodic_Table obj;
 
     User_Input_Area *text_area = new User_Input_Area(centralWidget);
+    text_area->zoomIn(10);
 
     Interactive_Table *periodic[9][18];
 
