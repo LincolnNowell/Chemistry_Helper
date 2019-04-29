@@ -223,6 +223,8 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance, bool redo) 
        Turn_into_Algebra_Equation(equation_to_balance,true);
    }
    else{
+       
+       tries = 0;
        std::string hold = Create_Output(total);
 
        Format_Output(hold);
