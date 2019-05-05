@@ -3,7 +3,6 @@
 #include "input_parser.h"
 #include "util.h"
 
-
 void parse(std::string line)
 {
     /*
@@ -18,17 +17,45 @@ void parse(std::string line)
     std::vector<element> compound_to_be_stored; //hold elements to be stored in a compound object
 
     int subscript = 1;
+    int subscript_after_parenthesis = 1;
+    size_t beginning_of_parenthesis = 0;
 
     std::string name = "", subcript_hold = "";
 
     bool create_element = false;
     bool left_side = true;
     bool has_lower_case = false;
+    bool parenthesis = false;
+    bool in_paren = false;
+    int code = 0;
 
     //Loop through each letter of the user input to parse for elements
     for (size_t character = 0; character < line.size(); ++character) {
 
         if (line.at(character) == ' ') { continue; }
+
+
+        //locate the subscript outside parenthesis
+        if(line.at(character) == ')' and parenthesis){
+            std::string hold = " ";
+            hold += line.at(character + 1);
+            subscript_after_parenthesis = std::stoi(hold);
+            parenthesis = false;
+            in_paren = true;
+            character = beginning_of_parenthesis;
+        }
+        else if(line.at(character) == ')'){
+            //place index after subscript to avoid creating a element object by accident
+            in_paren = false;
+            character += 2;
+            subscript_after_parenthesis = 1;
+            code = 0;
+        }
+
+        //skip to until you reach the subscript to not create elements accidently
+        if(parenthesis){continue;}
+
+
 
         // > is appended to so the program doesn't miss the last compound
         if (line.at(character) == '>') {
@@ -54,6 +81,15 @@ void parse(std::string line)
 
             compound_to_be_stored.clear();
         }
+
+
+        //if element is in parenthesis
+        if(line.at(character) == '('){
+            create_element = true;
+            beginning_of_parenthesis = character + 1;
+            parenthesis = true;
+        }
+
 
 
         //check to see if to see if character is a uppercase
@@ -86,6 +122,8 @@ void parse(std::string line)
                 create_element = true;
                 subcript_hold = "";
             }
+
+            if(line.at(character + 1) == ')'){code = 1;}
         }
 
         //if there is no subscript after lowercase
@@ -100,7 +138,8 @@ void parse(std::string line)
 
 
         if (create_element) {
-            compound_to_be_stored.push_back(element(name, subscript));
+            std::cout << name << " " << subscript << " " << subscript_after_parenthesis << " " << in_paren << "\n";
+            compound_to_be_stored.push_back(element(name, subscript, subscript_after_parenthesis, in_paren, code));
             create_element = false;
             has_lower_case = false;
             name = "";
@@ -114,23 +153,23 @@ void parse(std::string line)
 }
 
 
-void Turn_into_Algebra_Equation(const equation& equation_to_balance, bool redo) {
+void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
 
     static int tries = 0;
 
     std::vector<compound> total;
 
     //combine the left and right sides
-    for (auto& Cmpd : equation_to_balance.left)
+    for (const auto& Cmpd : equation_to_balance.left)
     {
         total.push_back(Cmpd);
         if (Cmpd.mChangeSide == true) {
-            std::vector<element> dummy_vector = { element(" ", 0) }; //set dummy vector so to check for equals sign
+            std::vector<element> dummy_vector = { element(" ", 0, 1, false, 0) }; //set dummy vector so to check for equals sign
             total.push_back(compound(dummy_vector));
         }
     }
 
-    for (auto& Cmpd : equation_to_balance.right) {total.push_back(Cmpd);}
+    for (const auto& Cmpd : equation_to_balance.right) {total.push_back(Cmpd);}
 
     //give each compound a variable
     char var = 'A';
@@ -141,9 +180,6 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance, bool redo) 
     // map holds the coefficecents that have been solved for
     std::map<char,double> coeffiecents;
     coeffiecents.insert(std::pair<char,double>('A', 1));// Let A = 1 used to solve for first coeffiecent
-
-    size_t num_elements = 0;
-    bool use_substitution = false;
 
     std::vector<std::string> equations;
 
@@ -165,8 +201,6 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance, bool redo) 
                         total[inner_compound].compound_elements[inner_element].name)
                     {
 
-                        ++num_elements;
-
                         //replace variable with its value
                         if (total[inner_compound].Constant != 0) {
                             equation += std::to_string(total[inner_compound].compound_elements[inner_element].numb_of_elements) +
@@ -178,19 +212,20 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance, bool redo) 
                     }
                 }
             }
-
-
-            if(num_elements == total.size() - 1){
-                use_substitution = true;
-            }
+            std::cout << equation << "\n";
 
             equations.push_back(equation);
-            num_elements = 0;
             equation = "";
         }
     }
 
-    if(redo){
+    //Run if the previous attempt failed
+    if(tries % 2 == 0){
+
+        //sort equations in ascending order by size
+        //usually the largest equation is solved last
+
+        //Solves equations without using substitution first, it sorts it if the attempt failed.
         struct greater_than{
             bool operator()(const std::string& first, const std::string& second){
                 return first.size() < second.size();
@@ -202,9 +237,11 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance, bool redo) 
         std::sort(equations.begin(),equations.end(), ASC);
     }
 
-    if(use_substitution){
+    if(tries / 3 == 1){
+        std::map<char,std::string> expressions;
+
         for(size_t index = 0;index < equations.size(); ++index){
-            Solve_for_Variable(equations[index],coeffiecents);
+            Use_Substitution(equations[index],coeffiecents,expressions);
         }
     }
     else{
@@ -214,16 +251,21 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance, bool redo) 
     }
 
 
+
    Add_Coeffiecents_To_Compound(total,coeffiecents);
+
+
 
    bool balanced = is_balanced(total);
 
-   if(!balanced and tries < 1){
+   if(!balanced){
        ++tries;
-       Turn_into_Algebra_Equation(equation_to_balance,true);
+
+       Turn_into_Algebra_Equation(equation_to_balance);
    }
+
    else{
-       
+
        tries = 0;
        std::string hold = Create_Output(total);
 
@@ -234,6 +276,112 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance, bool redo) 
        output->setText(QString::fromStdString(hold));
        output->show();
    }
+}
+
+void Use_Substitution(std::string Algebra_Equation, std::map<char,double>& coefficents, std::map<char,std::string>& expressions){
+    Insert_Variables(Algebra_Equation, coefficents);
+    Insert_Expressions(Algebra_Equation, expressions);
+
+    double num = 0;
+    char var = ' ';
+    bool change_sides = false;
+    std::string hold_coefficent = "";
+    std::string hold_known_value = "";
+    std::string expression = "";
+    bool var_has_value = false;
+    bool create_element = false;
+    bool is_expression = false;
+
+
+    std::vector<Variable> LeftHandSide, RightHandSide;
+
+    for (size_t character = 0; character < Algebra_Equation.size(); character++){
+
+        if (Algebra_Equation.at(character) == ' ') { continue; }
+        if (Algebra_Equation.at(character) == '=') { change_sides = true; continue; }
+
+
+        //store the numbers inside parenthesis
+        if(var_has_value and Algebra_Equation.at(character) != ')'){
+            if(Algebra_Equation.at(character) > 47 and Algebra_Equation.at(character) < 58){
+                is_expression = true;
+            }
+            hold_known_value += Algebra_Equation.at(character);
+            continue;
+        }
+
+        //the known values are surrounded by parenthesises if a open bracket is meet a flag is set to true
+        if(Algebra_Equation.at(character) == '('){
+            var_has_value = true;
+        }
+
+        //multipy coefficent and know value together
+        else if(Algebra_Equation.at(character) == ')'){
+
+            if(!is_expression){
+                var_has_value = false;
+                num = std::stod(hold_coefficent) * std::stod(hold_known_value);
+                hold_known_value = ' ';
+                var = ' ';
+                create_element = true;
+            }
+            else{
+                num = std::stod(hold_coefficent);
+                if(change_sides){
+                    Distribute(hold_known_value,RightHandSide,num);
+                }
+                else{
+                    Distribute(hold_known_value,LeftHandSide,num);
+                }
+
+            }
+        }
+
+        else{
+            //check for coeffients
+            if (Algebra_Equation.at(character) > 47 and Algebra_Equation.at(character) < 58)
+            {
+                hold_coefficent = Algebra_Equation.at(character);
+            }
+            //runs if variable is unsolved
+            else if (Algebra_Equation.at(character) > 63 and Algebra_Equation.at(character) < 91){
+                var = Algebra_Equation.at(character);
+                num = std::stod(hold_coefficent);
+                create_element = true;
+            }
+        }
+
+        if(create_element){
+             if (change_sides) {
+                 RightHandSide.push_back(Variable(var, num));
+                 create_element = false;
+             }
+             else {
+                 LeftHandSide.push_back(Variable(var, num));
+                 create_element = false;
+             }
+         }
+    }
+    std::cout << "Working\n";
+
+    for(const auto& obj : LeftHandSide){std::cout << obj.var << " " << obj.constant << "\n";}
+    for(const auto& obj : RightHandSide){std::cout << obj.var << " " << obj.constant << "\n";}
+}
+
+void Distribute(std::string& equation, std::vector<Variable>& side_of_equation, double coefficent){
+
+    /*Distribute multiple onto the equation*/
+
+    for(size_t letter = 0; letter < equation.size(); ++letter){
+        if(Is_Number(equation.at(letter)) and Is_Uppercase(equation.at(letter + 1))){
+            double num = std::stod(std::to_string(equation.at(letter))) * coefficent;
+            side_of_equation.push_back(Variable(equation.at(letter),num));
+        }
+        else if(Is_Number(equation.at(letter))){
+            double num = std::stod(std::to_string(equation.at(letter))) * coefficent;
+            side_of_equation.push_back(Variable(' ',num));
+        }
+    }
 }
 
 std::vector<double> Check_For_Fractions(std::map<char,double>& coeffiecents){
@@ -248,27 +396,27 @@ std::vector<double> Check_For_Fractions(std::map<char,double>& coeffiecents){
     std::vector<double> numbers;
 
     // floor the value and compare it to original to see if it is a decimal
-    for(const auto& [key,value] : coeffiecents){
-        if(std::floor(value) != value){
+    for(const auto& value : coeffiecents){
+        if(std::floor(value.second) != value.second){
             has_fraction = true;
         }
     }
 
     if(has_fraction){
-        for(const auto& [key,value] : coeffiecents){
-            to_be_sorted.push_back(value);
+        for(const auto& value : coeffiecents){
+            to_be_sorted.push_back(value.second);
         }
 
         int gcd = GCD(to_be_sorted);
 
-        for(auto& [key,value] : coeffiecents){
-            numbers.push_back(value * gcd);
+        for(auto& value : coeffiecents){
+            numbers.push_back(value.second * gcd);
         }
     }
 
     else {
-        for(const auto& [key,value] : coeffiecents){
-            numbers.push_back(value);
+        for(const auto& value : coeffiecents){
+            numbers.push_back(value.second);
         }
     }
 
@@ -281,6 +429,19 @@ void Insert_Variables(std::string& Algebra_Equation, const std::map<char,double>
         for (size_t line = 0; line < Algebra_Equation.size(); ++line) {
             if(key == Algebra_Equation.at(line)){
                 std::string hold = "(" + std::to_string(value) + ")"; // put parenthesis around the known value
+                int location = static_cast<int>(line) + 1;
+                //replace known values in the string
+                Algebra_Equation.replace(Algebra_Equation.begin() + static_cast<int>(line),Algebra_Equation.begin() + location, hold);
+            }
+        }
+    }
+}
+
+void Insert_Expressions(std::string& Algebra_Equation, const std::map<char,std::string>& expression){
+    for(auto const& [key,value] : expression){
+        for (size_t line = 0; line < Algebra_Equation.size(); ++line) {
+            if(key == Algebra_Equation.at(line)){
+                std::string hold = "(" + value + ")"; // put parenthesis around the known value
                 int location = static_cast<int>(line) + 1;
                 //replace known values in the string
                 Algebra_Equation.replace(Algebra_Equation.begin() + static_cast<int>(line),Algebra_Equation.begin() + location, hold);
@@ -440,7 +601,7 @@ bool is_balanced(std::vector<compound>& total){
         Check if the chemical equation is balanced
     */
 
-    std::vector<std::string> elements = {total[0].compound_elements[0].name};
+    std::vector<std::string> elements = {total[0].compound_elements[0].name}; // make sure vector isn't empty
 
     std::string stored_element = " ";
 
@@ -471,9 +632,9 @@ bool is_balanced(std::vector<compound>& total){
     int leftside = 0, rightside = 0;
     int coefficent;
 
-    for(size_t i = 0; i < elements.size(); ++i){
+    for(size_t element = 0; element < elements.size(); ++element){
 
-        stored_element = elements[i];
+        stored_element = elements[element];
 
         for (size_t compound = 0; compound < total.size(); ++compound){
 
@@ -487,6 +648,7 @@ bool is_balanced(std::vector<compound>& total){
                 }
 
 
+                //store the total number of compounds in the correct side
                 if(total[compound].compound_elements[element].name == stored_element){
                     if(!change_sides){leftside += total[compound].compound_elements[element].numb_of_elements * coefficent;}
                     else{rightside += total[compound].compound_elements[element].numb_of_elements * coefficent;}
@@ -555,6 +717,8 @@ std::string Create_Output(const std::vector<compound>& total){
     */
 
     std::string hold = "";
+    bool add_paren = false;
+    int num_of_opn_paren = 0, num_close = 1;
 
     for(const auto& Compound : total){
         //check for equals sign
@@ -565,8 +729,17 @@ std::string Create_Output(const std::vector<compound>& total){
         // if the coefficent is less than 2, just add the name and subscript
         else if(Compound.Constant < 2){
             for(const auto& elements : Compound.compound_elements){
-                hold += elements.name;
-                if(elements.numb_of_elements > 1){hold += std::to_string(elements.numb_of_elements);}
+                if(elements.in_paren){add_paren = true;}
+                if(add_paren and num_of_opn_paren < 1){hold += "("; num_of_opn_paren = 1;}
+
+                 hold += elements.name;
+                if(elements.numb_of_elements / elements.outside_parenthesis_subscript > 1 )
+                {hold += std::to_string(elements.numb_of_elements / elements.outside_parenthesis_subscript);}
+                if(elements.code == 1){
+                    add_paren = false;
+                    hold += ")"; hold += std::to_string(elements.outside_parenthesis_subscript);
+                    num_of_opn_paren = 0;
+                }
             }
             hold += " + ";
         }
@@ -574,8 +747,17 @@ std::string Create_Output(const std::vector<compound>& total){
         else{
             hold+= std::to_string(Compound.Constant);
             for(const auto& elements : Compound.compound_elements){
-                hold += elements.name;
-                if(elements.numb_of_elements > 1){hold += std::to_string(elements.numb_of_elements);}
+                if(elements.in_paren){add_paren = true;}
+                if(add_paren and num_of_opn_paren < 1){hold += "("; num_of_opn_paren = 1;}
+
+                 hold += elements.name;
+                if(elements.numb_of_elements / elements.outside_parenthesis_subscript > 1 )
+                {hold += std::to_string(elements.numb_of_elements / elements.outside_parenthesis_subscript);}
+                if(elements.code == 1){
+                    add_paren = false;
+                    hold += ")"; hold += std::to_string(elements.outside_parenthesis_subscript);
+                    num_of_opn_paren = 0;
+                }
             }
             hold += " + ";
         }
@@ -606,4 +788,16 @@ void Format_Output(std::string& hold){
            ready = false;
        }
    }
+}
+
+bool Is_Number(char letter){
+    return letter > 47 and letter < 58 ? true : false;
+}
+
+bool Is_Uppercase(char letter){
+    return letter > 63 and letter < 91 ? true : false;
+}
+
+bool Is_Lowercase(char letter){
+    return letter > 96 and letter < 123 ? true : false;
 }
