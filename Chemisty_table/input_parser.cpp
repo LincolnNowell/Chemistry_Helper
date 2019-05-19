@@ -220,7 +220,7 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
         }
     }
 
-/*
+
     //Run if the previous attempt failed
     if(tries % 2 == 0){
 
@@ -250,17 +250,6 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
         for(size_t index = 0;index < equations.size(); ++index){
             Solve_for_Variable(equations[index],coeffiecents);
         }
-    }
-*/
-
-    if(tries > 1){
-        coeffiecents.clear();
-        coeffiecents.insert(std::pair<char,int>(++var,1));
-    }
-    std::map<char,std::string> expressions;
-
-    for(size_t index = 0;index < equations.size(); ++index){
-        Use_Substitution(equations[index],coeffiecents,expressions);
     }
 
 
