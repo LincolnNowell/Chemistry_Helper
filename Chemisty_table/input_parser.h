@@ -96,6 +96,11 @@ void Use_Substitution(std::string, std::map<char,double>&, std::map<char,std::st
 Variable Find_Variable(std::vector<Variable>, std::vector<Variable>);
 void Solve_Using_Substitution(std::string, std::map<char,double>&);
 void Distribute(std::string&,std::vector<Variable>&,double);
+void CombineLikeTerms(std::vector<Variable>& side);
+void IsolateVariable(std::vector<Variable>& Variable_Side, std::vector<Variable>& Variable_Value, char value);
+void substitution(std::vector<Variable> Left, std::vector<Variable> Right, std::map<char,std::string>& exprs);
+std::vector<double> Check_For_Fractions(std::map<char,double>& coeffiecents);
+void removing_solved_for_expressions(std::map<char,double>& coefficents, std::map<char,std::string>& expressions);
 std::vector<double> Check_For_Fractions(std::map<char,double>&);
 bool is_balanced(std::vector<compound>& total);
 void Add_Coeffiecents_To_Compound(std::vector<compound>& total, std::map<char,double>&coeffiecents);

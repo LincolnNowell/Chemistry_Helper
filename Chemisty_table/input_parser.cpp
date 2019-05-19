@@ -177,9 +177,10 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
 
     std::string equation = "";
 
+    static char vara = 'A';
     // map holds the coefficecents that have been solved for
     std::map<char,double> coeffiecents;
-    coeffiecents.insert(std::pair<char,double>('A', 1));// Let A = 1 used to solve for first coeffiecent
+    coeffiecents.insert(std::pair<char,double>(vara, 1));// Let A = 1 used to solve for first coeffiecent
 
     std::vector<std::string> equations;
 
@@ -219,6 +220,7 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
         }
     }
 
+/*
     //Run if the previous attempt failed
     if(tries % 2 == 0){
 
@@ -249,7 +251,17 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
             Solve_for_Variable(equations[index],coeffiecents);
         }
     }
+*/
 
+    if(tries > 1){
+        coeffiecents.clear();
+        coeffiecents.insert(std::pair<char,int>(++var,1));
+    }
+    std::map<char,std::string> expressions;
+
+    for(size_t index = 0;index < equations.size(); ++index){
+        Use_Substitution(equations[index],coeffiecents,expressions);
+    }
 
 
    Add_Coeffiecents_To_Compound(total,coeffiecents);
@@ -281,13 +293,14 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
 void Use_Substitution(std::string Algebra_Equation, std::map<char,double>& coefficents, std::map<char,std::string>& expressions){
     Insert_Variables(Algebra_Equation, coefficents);
     Insert_Expressions(Algebra_Equation, expressions);
+    Insert_Variables(Algebra_Equation, coefficents);
 
     double num = 0;
     char var = ' ';
     bool change_sides = false;
-    std::string hold_coefficent = "";
-    std::string hold_known_value = "";
-    std::string expression = "";
+    std::string hold_coefficent = " ";
+    std::string hold_known_value = " ";
+    std::string expression = " ";
     bool var_has_value = false;
     bool create_element = false;
     bool is_expression = false;
@@ -303,7 +316,7 @@ void Use_Substitution(std::string Algebra_Equation, std::map<char,double>& coeff
 
         //store the numbers inside parenthesis
         if(var_has_value and Algebra_Equation.at(character) != ')'){
-            if(Algebra_Equation.at(character) > 47 and Algebra_Equation.at(character) < 58){
+            if(!Is_Number(Algebra_Equation.at(character)) and Algebra_Equation.at(character) != '.'){
                 is_expression = true;
             }
             hold_known_value += Algebra_Equation.at(character);
@@ -321,7 +334,7 @@ void Use_Substitution(std::string Algebra_Equation, std::map<char,double>& coeff
             if(!is_expression){
                 var_has_value = false;
                 num = std::stod(hold_coefficent) * std::stod(hold_known_value);
-                hold_known_value = ' ';
+                hold_known_value = " ";
                 var = ' ';
                 create_element = true;
             }
@@ -333,6 +346,8 @@ void Use_Substitution(std::string Algebra_Equation, std::map<char,double>& coeff
                 else{
                     Distribute(hold_known_value,LeftHandSide,num);
                 }
+                hold_known_value = " ";
+                is_expression = false;
 
             }
         }
@@ -362,24 +377,195 @@ void Use_Substitution(std::string Algebra_Equation, std::map<char,double>& coeff
              }
          }
     }
-    std::cout << "Working\n";
 
-    for(const auto& obj : LeftHandSide){std::cout << obj.var << " " << obj.constant << "\n";}
-    for(const auto& obj : RightHandSide){std::cout << obj.var << " " << obj.constant << "\n";}
+
+    int num_vars = 0;
+    for(const auto& obj : LeftHandSide){if(obj.var != ' '){++num_vars;}}
+    for(const auto& obj : RightHandSide){if(obj.var != ' '){++num_vars;}}
+
+    //run if their is only one variable present
+    if(num_vars == 1){
+        auto iter = std::find_if(RightHandSide.begin(), RightHandSide.end(), [](const Variable& obj){return obj.var != ' '; });
+        if(iter == RightHandSide.end()){
+            Variable obj(Find_Variable(LeftHandSide, RightHandSide));
+            coefficents.insert(std::pair(obj.var,obj.constant));
+        }
+        else{
+            iter = std::find_if(LeftHandSide.begin(), LeftHandSide.end(), [](const Variable& obj ){return  obj.var != ' ';});
+            if(iter == LeftHandSide.end()){
+                Variable obj(Find_Variable(LeftHandSide, RightHandSide));
+                coefficents.insert(std::pair(obj.var,obj.constant));
+            }
+        }
+    }
+    else{
+        substitution(LeftHandSide,RightHandSide,expressions);
+    }
+
 }
 
 void Distribute(std::string& equation, std::vector<Variable>& side_of_equation, double coefficent){
 
     /*Distribute multiple onto the equation*/
 
+    int sign = 1;
+    std::string number = " ";
+
     for(size_t letter = 0; letter < equation.size(); ++letter){
-        if(Is_Number(equation.at(letter)) and Is_Uppercase(equation.at(letter + 1))){
-            double num = std::stod(std::to_string(equation.at(letter))) * coefficent;
-            side_of_equation.push_back(Variable(equation.at(letter),num));
+
+        if(Is_Number(equation.at(letter)) or equation.at(letter) == '.'){number += equation.at(letter);}
+        else if(!Is_Uppercase(equation.at(letter)) and number != " "){
+            double num = (std::stod(number) * sign) * coefficent;
+            side_of_equation.push_back(Variable(' ', num));
+            number = " ";
         }
-        else if(Is_Number(equation.at(letter))){
-            double num = std::stod(std::to_string(equation.at(letter))) * coefficent;
-            side_of_equation.push_back(Variable(' ',num));
+        else if(Is_Uppercase(equation.at(letter)) and number != " "){
+            double num = (std::stod(number) * sign) * coefficent;
+            side_of_equation.push_back(Variable(equation.at(letter), num));
+            number = " ";
+        }
+        else if(Is_Uppercase(equation.at(letter)) and number == " "){
+            side_of_equation.push_back(Variable(equation.at(letter), 1));
+        }
+
+        if(equation.at(letter) == '-'){sign = -1;}
+        if(equation.at(letter) == '+'){sign = 1;}
+    }
+}
+
+void removing_solved_for_expressions(std::map<char,double>& coefficents, std::map<char,std::string>& expressions){
+
+    /*
+        Remove expressions for values that have already been solved for
+    */
+    for (const auto& [key,value] : coefficents)
+    {
+        if(value > 0){
+            auto iter = expressions.find(key);
+            if(iter != expressions.end()){
+                expressions.erase(iter);
+            }
+        }
+    }
+
+}
+
+void substitution(std::vector<Variable> Left, std::vector<Variable> Right, std::map<char,std::string>& exprs){
+
+    bool onLeft = false, onRight = false;
+    char Var = ' ';
+
+    for(const auto& ele : Left){
+        if(Is_Uppercase(ele.var)){
+            onLeft = true;
+            Var = ele.var;
+        }
+    }
+
+    for(const auto& ele : Right){
+        if(Is_Uppercase(ele.var)){
+            onLeft = false;
+            onRight = true;
+            Var = ele.var;
+        }
+    }
+
+    CombineLikeTerms(Right);
+    CombineLikeTerms(Left);
+
+     if(onLeft){
+
+        IsolateVariable(Left,Right,Var);
+
+        if(Left[0].constant < 1 or Left[0].constant > 0){
+            for(auto& vars : Right){
+                vars.constant /= Left[0].constant;
+            }
+        }
+
+        std::string expression = " ";
+
+        for(auto& ele : Right){
+            expression += ele.var + std::to_string(ele.constant) + " + ";
+        }
+
+        exprs.insert(std::pair<char,std::string>(Var,expression));
+    }
+    else if(onRight){
+
+        IsolateVariable(Right,Left,Var);
+
+        // run  if variable is the only term on that side
+        if(Right[0].constant < 1 or Right[0].constant > 0){
+            for(auto& vars : Left){
+                vars.constant /= Right[0].constant;
+            }
+
+        }
+
+        std::string expression = " ";
+
+        for(auto& ele : Left){
+            expression += ele.var + std::to_string(ele.constant) + " + ";
+        }
+
+        exprs.insert(std::pair<char,std::string>(Var,expression));
+    }
+}
+
+void CombineLikeTerms(std::vector<Variable>& side){
+
+    for(size_t begin = 0; begin < side.size(); ++begin){
+        size_t position = begin;
+        char value =  side[position].var;
+
+        auto var = std::find_if(side.begin(),side.end(), [&value](const Variable& obj){return obj.var == value;});
+        size_t index = std::distance(side.begin(), var);
+
+        // add the terms together
+        if(var != side.end() and index != position){
+            var->constant += side[position].constant;
+            side.erase(side.begin() + position);
+        }
+    }
+}
+
+void IsolateVariable(std::vector<Variable>& Variable_Side, std::vector<Variable>& Variable_Value, char value){
+
+    size_t position = 0;
+    for(size_t index = 0; index < Variable_Side.size(); ++index){
+        if(Variable_Side[index].var == value){
+            position = index;
+        }
+    }
+
+        //find object with matching value
+    auto Var = std::find_if(Variable_Value.begin(),Variable_Value.end(), [&value](const Variable& obj){return obj.var == value;});
+
+    while(Var != Variable_Value.end()){
+            Var = std::find_if(Variable_Value.begin(),Variable_Value.end(), [&value](const Variable& obj){return obj.var == value;});
+            if(Var != Variable_Value.end()){
+                Variable_Side[position].constant -= Var->constant;
+                //remove object at index
+                auto index = std::distance(Variable_Side.begin(),Var);
+                Variable_Value.erase(Variable_Value.begin() + index);
+            }
+        }
+
+    //move other values to the other side
+    for(size_t var = 0; var < Variable_Side.size(); ++var){
+        if(Var->var == value){continue;}
+        Var = std::find_if(Variable_Value.begin(),Variable_Value.end(), [&value](const Variable& obj){return obj.var == value;});
+        if(Var == Variable_Value.end()){
+            Variable temp(Variable_Side[var]);
+            temp.constant *= -1;
+            Variable_Value.push_back(temp);
+            Variable_Side.erase(Variable_Side.begin() + var);
+        }
+        else{
+            //combine like terms across equation
+            Var->constant -= Variable_Side[var].constant;
+            Variable_Side.erase(Variable_Side.begin() + var);
         }
     }
 }
@@ -718,7 +904,7 @@ std::string Create_Output(const std::vector<compound>& total){
 
     std::string hold = "";
     bool add_paren = false;
-    int num_of_opn_paren = 0, num_close = 1;
+    int num_of_opn_paren = 0;
 
     for(const auto& Compound : total){
         //check for equals sign
@@ -795,7 +981,7 @@ bool Is_Number(char letter){
 }
 
 bool Is_Uppercase(char letter){
-    return letter > 63 and letter < 91 ? true : false;
+    return letter > 64 and letter < 91 ? true : false;
 }
 
 bool Is_Lowercase(char letter){
