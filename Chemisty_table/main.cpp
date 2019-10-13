@@ -7,12 +7,12 @@
 #include "user_input_area.h"
 #include "interactive_table.h"
 #include "submit_button.h"
+#include "Eigen"
 
 QGridLayout *Display_Table(QWidget *);
 
 int main(int argc, char *argv[])
 {
-
     QApplication a(argc, argv);
     QWidget *centralWidget = new QWidget();
 

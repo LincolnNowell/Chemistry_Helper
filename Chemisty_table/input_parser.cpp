@@ -138,7 +138,7 @@ void parse(std::string line)
 
 
         if (create_element) {
-            std::cout << name << " " << subscript << " " << subscript_after_parenthesis << " " << in_paren << "\n";
+            //std::cout << name << " " << subscript << " " << subscript_after_parenthesis << " " << in_paren << "\n";
             compound_to_be_stored.push_back(element(name, subscript, subscript_after_parenthesis, in_paren, code));
             create_element = false;
             has_lower_case = false;
@@ -179,8 +179,8 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
 
     static char vara = 'A';
     // map holds the coefficecents that have been solved for
-    std::map<char,double> coeffiecents;
-    coeffiecents.insert(std::pair<char,double>(vara, 1));// Let A = 1 used to solve for first coeffiecent
+    std::map<char,float> coeffiecents;
+    coeffiecents.insert(std::pair<char,float>(vara, 1));// Let A = 1 used to solve for first coeffiecent
 
     std::vector<std::string> equations;
 
@@ -219,6 +219,10 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
         }
     }
 
+
+
+
+
     //Run if the previous attempt failed
     if(tries % 2 == 0){
 
@@ -238,32 +242,15 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
     }
 
     if(tries / 3 == 1){
-        std::map<char,std::string> expressions;
-
-        for(size_t index = 0;index < equations.size(); ++index){
-            //Use_Substitution(equations[index],coeffiecents,expressions);
-        }
+        std::map<char,float> coeff = Solve_Using_Linear_Algebra(equation_to_balance,equations);
+        Add_Coeffiecents_To_Compound(total,coeff);
     }
     else{
         for(size_t index = 0;index < equations.size(); ++index){
             Solve_for_Variable(equations[index],coeffiecents);
+            Add_Coeffiecents_To_Compound(total,coeffiecents);
         }
     }
-
-    /*
-   std::map<char,std::string> expressions;
-   std::vector<std::string> equations_to_redo;
-
-   for(size_t index = 0;index < equations.size(); ++index){
-       Use_Substitution(equations[index],coeffiecents,expressions,equations_to_redo);
-   }
-   for(std::string expr : equations_to_redo){
-       Use_Substitution(expr,coeffiecents,expressions,equations_to_redo);
-   }
-   */
-
-   Add_Coeffiecents_To_Compound(total,coeffiecents);
-
 
 
    bool balanced = is_balanced(total);
@@ -286,316 +273,112 @@ void Turn_into_Algebra_Equation(const equation& equation_to_balance) {
        output->setText(QString::fromStdString(hold));
        output->show();
    }
+
 }
 
-void Use_Substitution(std::string Algebra_Equation, std::map<char,double>& coefficents,
-                      std::map<char,std::string>& expressions, std::vector<std::string>& redo)
-{
-    Insert_Variables(Algebra_Equation, coefficents);
-    Insert_Expressions(Algebra_Equation, expressions);
-    Insert_Variables(Algebra_Equation, coefficents);
+std::map<char,float> Solve_Using_Linear_Algebra(const equation& equation_to_balance, std::vector<std::string>& equations){
+    std::vector<std::string> elements;
 
-    double num = 0;
-    char var = ' ';
-    bool change_sides = false;
-    std::string hold_coefficent = " ";
-    std::string hold_known_value = " ";
-    std::string expression = " ";
-    bool var_has_value = false;
-    bool create_element = false;
-    bool is_expression = false;
-
-
-    std::vector<Variable> LeftHandSide, RightHandSide;
-
-    for (size_t character = 0; character < Algebra_Equation.size(); character++){
-
-        if (Algebra_Equation.at(character) == ' ') { continue; }
-        if (Algebra_Equation.at(character) == '=') { change_sides = true; continue; }
-
-
-        //store the numbers inside parenthesis
-        if(var_has_value and Algebra_Equation.at(character) != ')'){
-            if(!Is_Number(Algebra_Equation.at(character)) and Algebra_Equation.at(character) != '.'){
-                is_expression = true;
-            }
-            hold_known_value += Algebra_Equation.at(character);
-            continue;
-        }
-
-        //the known values are surrounded by parenthesises if a open bracket is meet a flag is set to true
-        if(Algebra_Equation.at(character) == '('){
-            var_has_value = true;
-        }
-
-        //multipy coefficent and know value together
-        else if(Algebra_Equation.at(character) == ')'){
-
-            if(!is_expression){
-                var_has_value = false;
-                num = std::stod(hold_coefficent) * std::stod(hold_known_value);
-                hold_known_value = " ";
-                var = ' ';
-                create_element = true;
+    bool already_found = false;
+    for(const auto& eq : equation_to_balance.left){
+        for(const auto& ele : eq.compound_elements){
+            if(elements.size() == 0){
+                elements.push_back(ele.name);
             }
             else{
-                num = std::stod(hold_coefficent);
-                if(change_sides){
-                    Distribute(hold_known_value,RightHandSide,num);
+                for(auto& element : elements){
+                    if(ele.name == element){
+                        already_found = true;
+                    }
+                }
+                if(!already_found){
+                    elements.push_back(ele.name);
+                }
+            }
+            already_found = false;
+        }
+    }
+
+    if(elements.size() != equations.size()){
+        equations.pop_back();
+    }
+
+    std::vector<std::vector<float>> matrix;
+    int largest_size = 0;
+    for(auto& eq : equations){
+        std::vector<float> nums;
+        std::string number = "";
+        char Var = 'A';
+        //char let = ' ';
+        for(auto& letter : eq){
+            if(Is_Number(letter)){
+                number += letter;
+            }
+            else if(Is_Uppercase(letter)){
+
+                if(letter == Var){
+                    nums.push_back(std::stod(number));
+                    number = "";
+                    Var++;
                 }
                 else{
-                    Distribute(hold_known_value,LeftHandSide,num);
+                    int difference = letter - Var;
+                    for(int i = 0; i < difference; i++){
+                        nums.push_back(0);
+                    }
+                    nums.push_back(std::stod(number));
+                    number = "";
+                    Var+= difference + 1;
                 }
-                hold_known_value = " ";
-                is_expression = false;
-
+            }
+            else{
+                number = "";
             }
         }
 
-        else{
-            //check for coeffients
-            if (Algebra_Equation.at(character) > 47 and Algebra_Equation.at(character) < 58)
-            {
-                hold_coefficent = Algebra_Equation.at(character);
-            }
-            //runs if variable is unsolved
-            else if (Algebra_Equation.at(character) > 63 and Algebra_Equation.at(character) < 91){
-                var = Algebra_Equation.at(character);
-                num = std::stod(hold_coefficent);
-                create_element = true;
-            }
+        if(largest_size < static_cast<int>(nums.size())){
+            largest_size = nums.size();
         }
-
-        if(create_element){
-             if (change_sides) {
-                 RightHandSide.push_back(Variable(var, num));
-                 create_element = false;
-             }
-             else {
-                 LeftHandSide.push_back(Variable(var, num));
-                 create_element = false;
-             }
-         }
+        matrix.push_back(nums);
     }
 
-
-    int num_vars = 0;
-    for(const auto& obj : LeftHandSide){if(obj.var != ' '){++num_vars;}}
-    for(const auto& obj : RightHandSide){if(obj.var != ' '){++num_vars;}}
-
-
-    //run if their is only one variable present
-    if(num_vars == 1){
-        auto iter = std::find_if(RightHandSide.begin(), RightHandSide.end(), [](const Variable& obj){return obj.var != ' '; });
-        if(iter == RightHandSide.end()){
-            Variable obj(Find_Variable(LeftHandSide, RightHandSide));
-            coefficents.insert(std::pair(obj.var,obj.constant));
-        }
-        else{
-            iter = std::find_if(LeftHandSide.begin(), LeftHandSide.end(), [](const Variable& obj ){return  obj.var != ' ';});
-            if(iter == LeftHandSide.end()){
-                Variable obj(Find_Variable(LeftHandSide, RightHandSide));
-                coefficents.insert(std::pair(obj.var,obj.constant));
-            }
+    for(auto& col : matrix){
+        if(static_cast<int>(col.size()) < largest_size){
+            col.push_back(0);
         }
     }
-    else{
-        if(!substitution(LeftHandSide,RightHandSide,expressions)){redo.push_back(Algebra_Equation);}
+
+    std::vector<float> sol = SolveForSolutions(matrix);
+    for(auto& ele : sol){
+        if(ele == 0.0){
+            ele = 1;
+        }
+        else if(ele < 0.0){
+            ele *= -1;
+        }
     }
 
+    sol.push_back(1);
+
+    std::map<char,float> coeff;
+
+    char Cvar = 'A';
+    for(auto& ele : sol){
+        coeff.insert(std::pair(Cvar++,ele));
+    }
+
+    std::vector<float> result = Check_For_Fractions(coeff);
+
+    Cvar = 'A';
+    coeff.clear();
+    for(auto& res : result){
+        coeff.insert(std::pair(Cvar++,res));
+    }
+
+    return coeff;
 }
 
-void Distribute(std::string& equation, std::vector<Variable>& side_of_equation, double coefficent){
-
-    /*Distribute multiple onto the equation*/
-
-    int sign = 1;
-    std::string number = " ";
-
-    for(size_t letter = 0; letter < equation.size(); ++letter){
-
-        if(Is_Number(equation.at(letter)) or equation.at(letter) == '.'){number += equation.at(letter);}
-        else if(!Is_Uppercase(equation.at(letter)) and number != " "){
-            double num = (std::stod(number) * sign) * coefficent;
-            side_of_equation.push_back(Variable(' ', num));
-            number = " ";
-        }
-        else if(Is_Uppercase(equation.at(letter)) and number != " "){
-            double num = (std::stod(number) * sign) * coefficent;
-            side_of_equation.push_back(Variable(equation.at(letter), num));
-            number = " ";
-        }
-        else if(Is_Uppercase(equation.at(letter)) and number == " "){
-            side_of_equation.push_back(Variable(equation.at(letter), 1));
-        }
-
-        if(equation.at(letter) == '-'){sign = -1;}
-        if(equation.at(letter) == '+'){sign = 1;}
-    }
-}
-
-void removing_solved_for_expressions(std::map<char,double>& coefficents, std::map<char,std::string>& expressions){
-
-    /*
-        Remove expressions for values that have already been solved for
-    */
-    for (const auto& [key,value] : coefficents)
-    {
-        if(value > 0){
-            auto iter = expressions.find(key);
-            if(iter != expressions.end()){
-                expressions.erase(iter);
-            }
-        }
-    }
-
-}
-
-bool substitution(std::vector<Variable> Left, std::vector<Variable> Right, std::map<char,std::string>& exprs){
-
-    bool onLeft = false, onRight = false;
-    char Var = ' ';
-
-    for(const auto& ele : Left){
-        if(Is_Uppercase(ele.var)){
-            onLeft = true;
-            Var = ele.var;
-        }
-    }
-
-    if(!onLeft){
-        for(const auto& ele : Right){
-            if(Is_Uppercase(ele.var)){
-                onLeft = false;
-                onRight = true;
-                Var = ele.var;
-            }
-        }
-    }
-
-    CombineLikeTerms(Right);
-    CombineLikeTerms(Left);
-    Remove_Zeros(Left,Right);
-
-     if(onLeft){
-
-        IsolateVariable(Left,Right,Var);
-
-        if(Left[0].constant < 1 or Left[0].constant > 0){
-            for(auto& vars : Right){
-                vars.constant /= Left[0].constant;
-            }
-            Left[0].constant = 1;
-        }
-
-        Remove_Zeros(Left,Right);
-
-        if(Left.size() == 0 or Right.size() == 0) return false;
-
-        std::string expression = " ";
-
-        for(auto& ele : Right){
-            expression += ele.var + std::to_string(ele.constant) + " + ";
-        }
-
-        exprs.insert(std::pair<char,std::string>(Var,expression));
-    }
-    else if(onRight){
-
-        IsolateVariable(Right,Left,Var);
-
-        // run  if variable is the only term on that side
-        if(Right[0].constant < 1 or Right[0].constant > 0){
-            for(auto& vars : Left){
-                vars.constant /= Right[0].constant;
-            }
-            Right[0].constant = 1;
-        }
-
-        Remove_Zeros(Left,Right);
-
-        if(Left.size() == 0 or Right.size() == 0) return false;
-
-        std::string expression = " ";
-
-        for(auto& ele : Left){
-            expression += ele.var + std::to_string(ele.constant) + " + ";
-        }
-
-        exprs.insert(std::pair<char,std::string>(Var,expression));
-    }
-
-     return true;
-}
-
-void CombineLikeTerms(std::vector<Variable>& side){
-
-    for(size_t begin = 0; begin < side.size(); ++begin){
-        size_t position = begin;
-        char value =  side[position].var;
-
-        auto var = std::find_if(side.begin(),side.end(), [&value](const Variable& obj){return obj.var == value;});
-        size_t index = std::distance(side.begin(), var);
-
-        // add the terms together
-        if(var != side.end() and index != position){
-            var->constant += side[position].constant;
-            side.erase(side.begin() + position);
-            begin = 0;
-        }
-    }
-}
-
-void Remove_Zeros(std::vector<Variable>& Left, std::vector<Variable>& Right){
-
-    auto Var = std::find_if(Left.begin(),Left.end(), [](const Variable& obj){return std::floor(obj.constant) == 0;});
-    if(Var != Left.end()){Left.erase(Var);}
-
-    Var = std::find_if(Right.begin(),Right.end(), [](const Variable& obj){return std::floor(obj.constant) == 0;});
-    if(Var != Right.end()){Right.erase(Var);}
-}
-
-void IsolateVariable(std::vector<Variable>& Variable_Side, std::vector<Variable>& Variable_Value, char value){
-
-    size_t position = 0;
-    for(size_t index = 0; index < Variable_Side.size(); ++index){
-        if(Variable_Side[index].var == value){
-            position = index;
-        }
-    }
-
-        //find object with matching value
-    auto Var = std::find_if(Variable_Value.begin(),Variable_Value.end(), [&value](const Variable& obj){return obj.var == value;});
-
-    while(Var != Variable_Value.end()){
-            Var = std::find_if(Variable_Value.begin(),Variable_Value.end(), [&value](const Variable& obj){return obj.var == value;});
-            if(Var != Variable_Value.end()){
-                Variable_Side[position].constant -= Var->constant;
-                //remove object at index
-                auto index = std::distance(Variable_Side.begin(),Var);
-                Variable_Value.erase(Variable_Value.begin() + index);
-            }
-        }
-
-    //move other values to the other side
-    for(size_t var = 0; var < Variable_Side.size(); ++var){
-        if(Variable_Side[var].var == value){continue;}
-        Var = std::find_if(Variable_Value.begin(),Variable_Value.end(), [&value](const Variable& obj){return obj.var == value;});
-        if(Var == Variable_Value.end()){
-            Variable temp(Variable_Side[var]);
-            temp.constant *= -1;
-            Variable_Value.push_back(temp);
-            Variable_Side.erase(Variable_Side.begin() + var);
-        }
-        else{
-            //combine like terms across equation
-            Var->constant -= Variable_Side[var].constant;
-            Variable_Side.erase(Variable_Side.begin() + var);
-        }
-    }
-}
-
-std::vector<double> Check_For_Fractions(std::map<char,double>& coeffiecents){
+std::vector<float> Check_For_Fractions(std::map<char,float>& coeffiecents){
 
     /*
      * If the any of the coeffiecents are decimals find the comman multiple and multiply each number by it
@@ -603,8 +386,8 @@ std::vector<double> Check_For_Fractions(std::map<char,double>& coeffiecents){
     */
 
     bool has_fraction = false;
-    std::vector<double> to_be_sorted;
-    std::vector<double> numbers;
+    std::vector<float> to_be_sorted;
+    std::vector<float> numbers;
 
     // floor the value and compare it to original to see if it is a decimal
     for(const auto& value : coeffiecents){
@@ -635,24 +418,11 @@ std::vector<double> Check_For_Fractions(std::map<char,double>& coeffiecents){
 }
 
 /*Insert known values into the equation*/
-void Insert_Variables(std::string& Algebra_Equation, const std::map<char,double>& known_constants){
+void Insert_Variables(std::string& Algebra_Equation, const std::map<char,float>& known_constants){
     for(auto const& [key,value] : known_constants){
         for (size_t line = 0; line < Algebra_Equation.size(); ++line) {
             if(key == Algebra_Equation.at(line)){
                 std::string hold = "(" + std::to_string(value) + ")"; // put parenthesis around the known value
-                int location = static_cast<int>(line) + 1;
-                //replace known values in the string
-                Algebra_Equation.replace(Algebra_Equation.begin() + static_cast<int>(line),Algebra_Equation.begin() + location, hold);
-            }
-        }
-    }
-}
-
-void Insert_Expressions(std::string& Algebra_Equation, const std::map<char,std::string>& expression){
-    for(auto const& [key,value] : expression){
-        for (size_t line = 0; line < Algebra_Equation.size(); ++line) {
-            if(key == Algebra_Equation.at(line)){
-                std::string hold = "(" + value + ")"; // put parenthesis around the known value
                 int location = static_cast<int>(line) + 1;
                 //replace known values in the string
                 Algebra_Equation.replace(Algebra_Equation.begin() + static_cast<int>(line),Algebra_Equation.begin() + location, hold);
@@ -670,7 +440,7 @@ Variable Find_Variable(std::vector<Variable> Left,std::vector<Variable> Right){
     bool Var_On_Left = false;
     bool Var_On_Right = false;
     char var = ' ';
-    double sum = 0;
+    float sum = 0;
 
     std::vector<Variable>LeftHandSide(Left), RightHandSide(Right);
 
@@ -734,11 +504,11 @@ Variable Find_Variable(std::vector<Variable> Left,std::vector<Variable> Right){
 }
 
 
-void Solve_for_Variable(std::string Algebra_Equation, std::map<char,double>& known_constansts) {
+void Solve_for_Variable(std::string Algebra_Equation, std::map<char,float>& known_constansts) {
 
     Insert_Variables(Algebra_Equation, known_constansts);
 
-    double num = 0;
+    float num = 0;
     char var = ' ';
     bool change_sides = false;
     std::string hold_coefficent = "";
@@ -899,12 +669,11 @@ bool is_balanced(std::vector<compound>& total){
     return balanced;
 }
 
-
-void Add_Coeffiecents_To_Compound(std::vector<compound>& total, std::map<char,double>&coeffiecents){
+void Add_Coeffiecents_To_Compound(std::vector<compound>& total, std::map<char,float>&coeffiecents){
 
     /*Add Coeffiecents to corresponding compound*/
 
-    std::vector<double>coeffiecents_to_add = Check_For_Fractions(coeffiecents);
+    std::vector<float>coeffiecents_to_add = Check_For_Fractions(coeffiecents);
 
 
     if(coeffiecents_to_add[0] <= 0){coeffiecents_to_add.erase(coeffiecents_to_add.begin());}

@@ -68,10 +68,10 @@ class Variable {
 
 public:
 
-    Variable(char Var = ' ', double Num = 0) : var(Var), constant(Num) {}
+    Variable(char Var = ' ', float Num = 0) : var(Var), constant(Num) {}
 
     char var = ' ';
-    double constant = 0.0;
+    float constant = 0.0;
     bool solved_for;
 };
 
@@ -79,7 +79,7 @@ class Expression : public Variable{
 
 public:
 
-    Expression(std::string expression = " ", char Var = ' ', double num = 0) : Variable(Var,num),expr(expression){}
+    Expression(std::string expression = " ", char Var = ' ', float num = 0) : Variable(Var,num),expr(expression){}
 
     std::string expr = " ";
 };
@@ -89,21 +89,23 @@ bool Is_Number(char);
 bool Is_Uppercase(char);
 bool Is_Lowercase(char);
 void Turn_into_Algebra_Equation(const equation&);
-void Insert_Variables(std::string&,const std::map<char,double>&);
+void Insert_Variables(std::string&,const std::map<char,float>&);
 void Insert_Expressions(std::string&, const std::map<char,std::string>&);
-void Solve_for_Variable(std::string,std::map<char,double>&);
-void Use_Substitution(std::string, std::map<char,double>&, std::map<char,std::string>&);
+void Solve_for_Variable(std::string,std::map<char,float>&);
+void Use_Substitution(std::string, std::map<char,float>&, std::map<char,std::string>&,std::vector<std::string>&);
 Variable Find_Variable(std::vector<Variable>, std::vector<Variable>);
-void Solve_Using_Substitution(std::string, std::map<char,double>&);
-void Distribute(std::string&,std::vector<Variable>&,double);
+//void Solve_Using_Substitution(std::string, std::map<char,float>&);
+std::map<char,float> Solve_Using_Linear_Algebra(const equation&,std::vector<std::string>&);
+void Remove_Zeros(std::vector<Variable>&, std::vector<Variable>&);
+void Distribute(std::string&,std::vector<Variable>&,float);
 void CombineLikeTerms(std::vector<Variable>& side);
 void IsolateVariable(std::vector<Variable>& Variable_Side, std::vector<Variable>& Variable_Value, char value);
-void substitution(std::vector<Variable> Left, std::vector<Variable> Right, std::map<char,std::string>& exprs);
-std::vector<double> Check_For_Fractions(std::map<char,double>& coeffiecents);
-void removing_solved_for_expressions(std::map<char,double>& coefficents, std::map<char,std::string>& expressions);
-std::vector<double> Check_For_Fractions(std::map<char,double>&);
+bool substitution(std::vector<Variable> Left, std::vector<Variable> Right, std::map<char,std::string>& exprs);
+std::vector<float> Check_For_Fractions(std::map<char,float>& coeffiecents);
+void removing_solved_for_expressions(std::map<char,float>& coefficents, std::map<char,std::string>& expressions);
+std::vector<float> Check_For_Fractions(std::map<char,float>&);
 bool is_balanced(std::vector<compound>& total);
-void Add_Coeffiecents_To_Compound(std::vector<compound>& total, std::map<char,double>&coeffiecents);
+void Add_Coeffiecents_To_Compound(std::vector<compound>& total, std::map<char,float>&coeffiecents);
 std::string Create_Output(const std::vector<compound>& total);
 void Format_Output(std::string&);
 
