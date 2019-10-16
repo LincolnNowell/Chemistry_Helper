@@ -317,7 +317,7 @@ std::map<char,float> Solve_Using_Linear_Algebra(const equation& equation_to_bala
             else if(Is_Uppercase(letter)){
 
                 if(letter == Var){
-                    nums.push_back(std::stod(number));
+                    nums.push_back(std::stof(number));
                     number = "";
                     Var++;
                 }
@@ -326,7 +326,7 @@ std::map<char,float> Solve_Using_Linear_Algebra(const equation& equation_to_bala
                     for(int i = 0; i < difference; i++){
                         nums.push_back(0);
                     }
-                    nums.push_back(std::stod(number));
+                    nums.push_back(std::stof(number));
                     number = "";
                     Var+= difference + 1;
                 }
@@ -350,10 +350,10 @@ std::map<char,float> Solve_Using_Linear_Algebra(const equation& equation_to_bala
 
     std::vector<float> sol = SolveForSolutions(matrix);
     for(auto& ele : sol){
-        if(ele == 0.0){
+        if(ele == 0.0f){
             ele = 1;
         }
-        else if(ele < 0.0){
+        else if(ele < 0.0f){
             ele *= -1;
         }
     }
@@ -538,7 +538,7 @@ void Solve_for_Variable(std::string Algebra_Equation, std::map<char,float>& know
         //multipy coefficent and know value together
         else if(Algebra_Equation.at(character) == ')'){
             var_has_value = false;
-            num = std::stod(hold_coefficent) * std::stod(hold_known_value);
+            num = std::stof(hold_coefficent) * std::stof(hold_known_value);
             hold_known_value = ' ';
             var = ' ';
             create_element = true;
@@ -553,7 +553,7 @@ void Solve_for_Variable(std::string Algebra_Equation, std::map<char,float>& know
             //runs if variable is unsolved
             else if (Algebra_Equation.at(character) > 63 and Algebra_Equation.at(character) < 91){
                 var = Algebra_Equation.at(character);
-                num = std::stod(hold_coefficent);
+                num = std::stof(hold_coefficent);
                 create_element = true;
             }
         }
